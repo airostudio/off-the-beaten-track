@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Off The Beaten Track - Discover Hidden Gem Destinations</title>
+    <meta name="description" content="Find the best off-the-beaten-track holiday locations. Discover hidden gem tours, day trips, events and local experiences worldwide.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧭</text></svg>">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="container nav-container">
+            <a href="#" class="logo" onclick="showSection('hero')">
+                <span class="logo-icon">🧭</span>
+                <span class="logo-text">Off The Beaten Track</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="#" onclick="showSection('hero')">Home</a></li>
+                <li><a href="#" onclick="showSection('discover')">Discover</a></li>
+                <li><a href="#" onclick="showSection('tours')">Tours & Day Trips</a></li>
+                <li><a href="#" onclick="showSection('events')">Events & Shows</a></li>
+                <li><a href="#" onclick="showSection('about')">About</a></li>
+            </ul>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="hero">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <h1 class="hero-title">Discover Places<br><em>Others Miss</em></h1>
+            <p class="hero-subtitle">Find hidden gem destinations, secret tours, and authentic local experiences far from the tourist crowds.</p>
+
+            <!-- Location Detection Banner -->
+            <div class="location-banner" id="locationBanner">
+                <span class="location-icon">📍</span>
+                <span id="locationText">Detecting your location...</span>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="search-container">
+                <div class="search-bar">
+                    <div class="search-field">
+                        <label for="searchCountry">Country</label>
+                        <select id="searchCountry" onchange="updateStates()">
+                            <option value="">Select Country</option>
+                        </select>
+                    </div>
+                    <div class="search-divider"></div>
+                    <div class="search-field">
+                        <label for="searchState">State / Region</label>
+                        <select id="searchState" onchange="updateRegions()">
+                            <option value="">Select State</option>
+                        </select>
+                    </div>
+                    <div class="search-divider"></div>
+                    <div class="search-field">
+                        <label for="searchRegion">Area</label>
+                        <select id="searchRegion">
+                            <option value="">Select Area</option>
+                        </select>
+                    </div>
+                    <button class="search-btn" onclick="performSearch()">
+                        <span class="search-btn-icon">🔍</span>
+                        <span class="search-btn-text">Explore</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Category Filters -->
+            <div class="quick-filters">
+                <button class="filter-chip active" onclick="filterCategory('all', this)">All</button>
+                <button class="filter-chip" onclick="filterCategory('tours', this)">🥾 Tours & Day Trips</button>
+                <button class="filter-chip" onclick="filterCategory('events', this)">🎭 Events & Shows</button>
+                <button class="filter-chip" onclick="filterCategory('food', this)">🍷 Food & Drink</button>
+                <button class="filter-chip" onclick="filterCategory('nature', this)">🌿 Nature & Outdoors</button>
+                <button class="filter-chip" onclick="filterCategory('culture', this)">🏛️ Culture & History</button>
+            </div>
+        </div>
+        <div class="hero-scroll">
+            <span>Scroll to explore</span>
+            <div class="scroll-arrow"></div>
+        </div>
+    </section>
+
+    <!-- Near You Section (auto-detected) -->
+    <section class="section near-you" id="nearYou">
+        <div class="container">
+            <div class="section-header">
+                <h2>Hidden Gems <span class="highlight">Near You</span></h2>
+                <p id="nearYouSubtitle">Discovering experiences in your area</p>
+            </div>
+            <div class="card-grid" id="nearYouGrid">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Discover Section -->
+    <section class="section discover" id="discover">
+        <div class="container">
+            <div class="section-header">
+                <h2>Discover <span class="highlight">Off The Beaten Track</span></h2>
+                <p>Curated hidden gems that most tourists never find</p>
+            </div>
+
+            <!-- Destination Cards -->
+            <div class="featured-destinations" id="featuredGrid">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Tours & Day Trips Section -->
+    <section class="section tours-section" id="tours">
+        <div class="container">
+            <div class="section-header">
+                <h2>Tours & <span class="highlight">Day Trips</span></h2>
+                <p>Unique experiences with local guides who know the secret spots</p>
+            </div>
+            <div class="platform-tabs">
+                <button class="platform-tab active" onclick="filterPlatform('all', this)">All Platforms</button>
+                <button class="platform-tab" onclick="filterPlatform('tripadvisor', this)">TripAdvisor</button>
+                <button class="platform-tab" onclick="filterPlatform('getyourguide', this)">GetYourGuide</button>
+                <button class="platform-tab" onclick="filterPlatform('withlocals', this)">Withlocals</button>
+            </div>
+            <div class="card-grid" id="toursGrid">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Events & Shows Section -->
+    <section class="section events-section" id="events">
+        <div class="container">
+            <div class="section-header">
+                <h2>Events & <span class="highlight">Shows in Town</span></h2>
+                <p>Local festivals, performances, and cultural events happening now</p>
+            </div>
+            <div class="events-timeline" id="eventsTimeline">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Search Results Section (hidden by default) -->
+    <section class="section search-results" id="searchResults" style="display:none;">
+        <div class="container">
+            <div class="section-header">
+                <h2>Search Results for <span class="highlight" id="searchResultsTitle"></span></h2>
+                <p id="searchResultsCount"></p>
+            </div>
+            <div class="results-filters">
+                <button class="filter-chip active" onclick="filterResults('all', this)">All</button>
+                <button class="filter-chip" onclick="filterResults('tours', this)">Tours</button>
+                <button class="filter-chip" onclick="filterResults('events', this)">Events</button>
+                <button class="filter-chip" onclick="filterResults('food', this)">Food & Drink</button>
+                <button class="filter-chip" onclick="filterResults('nature', this)">Nature</button>
+                <button class="filter-chip" onclick="filterResults('culture', this)">Culture</button>
+            </div>
+            <div class="card-grid" id="searchResultsGrid">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="section about" id="about">
+        <div class="container">
+            <div class="about-grid">
+                <div class="about-content">
+                    <h2>Why Go <span class="highlight">Off The Beaten Track?</span></h2>
+                    <p>We believe the best travel experiences happen when you step away from the tourist traps and discover what makes a place truly special. Our curated collection brings together hidden gems from trusted platforms like TripAdvisor, GetYourGuide, and Withlocals.</p>
+                    <div class="about-features">
+                        <div class="about-feature">
+                            <span class="about-feature-icon">🗺️</span>
+                            <div>
+                                <h3>Curated Hidden Gems</h3>
+                                <p>Every destination is hand-picked for authenticity and uniqueness.</p>
+                            </div>
+                        </div>
+                        <div class="about-feature">
+                            <span class="about-feature-icon">👤</span>
+                            <div>
+                                <h3>Local Experts</h3>
+                                <p>Tours led by passionate locals who share insider knowledge.</p>
+                            </div>
+                        </div>
+                        <div class="about-feature">
+                            <span class="about-feature-icon">📍</span>
+                            <div>
+                                <h3>Location-Aware</h3>
+                                <p>We detect your location to show relevant nearby experiences.</p>
+                            </div>
+                        </div>
+                        <div class="about-feature">
+                            <span class="about-feature-icon">⭐</span>
+                            <div>
+                                <h3>Verified Reviews</h3>
+                                <p>Aggregated ratings from TripAdvisor, GetYourGuide & Withlocals.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="about-image">
+                    <div class="about-img-placeholder">
+                        <span>🌍</span>
+                        <p>Explore the unexplored</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <span class="logo-icon">🧭</span>
+                    <span class="logo-text">Off The Beaten Track</span>
+                    <p>Discover hidden gem destinations and authentic local experiences around the world.</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Explore</h4>
+                    <ul>
+                        <li><a href="#" onclick="showSection('discover')">Hidden Gems</a></li>
+                        <li><a href="#" onclick="showSection('tours')">Tours & Day Trips</a></li>
+                        <li><a href="#" onclick="showSection('events')">Events & Shows</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Partners</h4>
+                    <ul>
+                        <li><a href="https://www.tripadvisor.com" target="_blank" rel="noopener">TripAdvisor</a></li>
+                        <li><a href="https://www.getyourguide.com" target="_blank" rel="noopener">GetYourGuide</a></li>
+                        <li><a href="https://www.withlocals.com" target="_blank" rel="noopener">Withlocals</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="#" onclick="showSection('about')">About Us</a></li>
+                        <li><a href="#">Contact</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Off The Beaten Track. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/data.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
