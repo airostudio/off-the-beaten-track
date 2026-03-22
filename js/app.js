@@ -244,7 +244,7 @@ function filterResults(category, btn) {
   });
 }
 
-// ---- Image URL helper ----
+// ---- Image URL helpers ----
 const IMG_STOP_WORDS = new Set([
   'with','from','into','over','through','across','along','between','against',
   'around','during','upon','about','this','that','these','those','have','been',
@@ -254,10 +254,20 @@ const IMG_STOP_WORDS = new Set([
   'vast','under','near','away','views','light','ancient','local','small','large',
 ]);
 
-function getImageUrl(item) {
-  // Deterministic seed from name so each destination always gets the same photo
+function nameToFilename(name) {
+  return (name || '')
+    .toLowerCase()
+    .replace(/['''`]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '') + '.jpg';
+}
+
+function getLocalImagePath(item) {
+  return `/images/${nameToFilename(item.name)}`;
+}
+
+function getLoremFlickrUrl(item) {
   const seed = [...(item.name || '')].reduce((a, c) => (a * 31 + c.charCodeAt(0)) & 0xfffff, 0);
-  // Use the name for specific recognisable terms, fall back to imagePrompt nouns
   const source = item.name || item.imagePrompt || '';
   const keywords = source
     .toLowerCase()
@@ -266,7 +276,6 @@ function getImageUrl(item) {
     .filter(w => w.length > 3 && !IMG_STOP_WORDS.has(w))
     .slice(0, 3)
     .join(',') || 'travel,landscape';
-  // loremflickr expects commas unencoded in the path segment
   return `https://loremflickr.com/800/600/${keywords}?lock=${seed}`;
 }
 
@@ -275,12 +284,10 @@ function createGemCard(gem) {
   const platformBadge = getPlatformBadge(gem.platform);
   const stars = getStarRating(gem.rating);
   const bookingUrl = getBookingUrl(gem.platform, gem.name);
-  const imgSrc = getImageUrl(gem);
-
   return `
     <div class="card" data-category="${gem.category}" data-platform="${gem.platform}">
       <div class="card-image">
-        <img class="card-img" src="${imgSrc}" alt="${gem.name}" loading="lazy">
+        <img class="card-img" src="${getLocalImagePath(gem)}" onerror="this.onerror=null;this.src='${getLoremFlickrUrl(gem)}'" alt="${gem.name}" loading="lazy">
         <span class="card-badge ${gem.type}">${gem.type === 'tour' ? 'Tour' : 'Destination'}</span>
         ${platformBadge}
       </div>
@@ -304,12 +311,10 @@ function createGemCard(gem) {
 function createEventCard(event) {
   const platformBadge = getPlatformBadge(event.platform);
   const bookingUrl = getBookingUrl(event.platform, event.name);
-  const imgSrc = getImageUrl(event);
-
   return `
     <div class="card event-card" data-category="events" data-platform="${event.platform}">
       <div class="card-image event-image">
-        <img class="card-img" src="${imgSrc}" alt="${event.name}" loading="lazy">
+        <img class="card-img" src="${getLocalImagePath(event)}" onerror="this.onerror=null;this.src='${getLoremFlickrUrl(event)}'" alt="${event.name}" loading="lazy">
         <span class="card-badge events">Event</span>
         ${platformBadge}
       </div>
@@ -333,7 +338,7 @@ function createEventTimelineItem(event) {
   return `
     <div class="timeline-item" data-category="events">
       <div class="timeline-date">
-        <img class="timeline-img" src="${getImageUrl(event)}" alt="${event.name}" loading="lazy">
+        <img class="timeline-img" src="${getLocalImagePath(event)}" onerror="this.onerror=null;this.src='${getLoremFlickrUrl(event)}'" alt="${event.name}" loading="lazy">
         <span>${event.date}</span>
       </div>
       <div class="timeline-content">
