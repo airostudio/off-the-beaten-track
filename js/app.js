@@ -62,7 +62,7 @@ function reverseGeocode(lat, lng) {
   userCountry = nearestCountry;
   userLocation = { lat, lng };
 
-  text.innerHTML = `📍 Showing hidden gems near <strong>${nearestCountry}</strong>`;
+  text.innerHTML = `Showing hidden gems near <strong>${nearestCountry}</strong>`;
 
   // Pre-select the country in search
   const countrySelect = document.getElementById('searchCountry');
@@ -276,8 +276,7 @@ function createGemCard(gem) {
   return `
     <div class="card" data-category="${gem.category}" data-platform="${gem.platform}">
       <div class="card-image">
-        <img class="card-img" src="${imgSrc}" alt="${gem.name}" loading="lazy" onerror="this.remove()">
-        <span class="card-emoji">${gem.image}</span>
+        <img class="card-img" src="${imgSrc}" alt="${gem.name}" loading="lazy">
         <span class="card-badge ${gem.type}">${gem.type === 'tour' ? 'Tour' : 'Destination'}</span>
         ${platformBadge}
       </div>
@@ -306,15 +305,14 @@ function createEventCard(event) {
   return `
     <div class="card event-card" data-category="events" data-platform="${event.platform}">
       <div class="card-image event-image">
-        <img class="card-img" src="${imgSrc}" alt="${event.name}" loading="lazy" onerror="this.remove()">
-        <span class="card-emoji">${event.image}</span>
+        <img class="card-img" src="${imgSrc}" alt="${event.name}" loading="lazy">
         <span class="card-badge events">Event</span>
         ${platformBadge}
       </div>
       <div class="card-content">
         <h3 class="card-title">${event.name}</h3>
-        <p class="card-location">📍 ${event.location}</p>
-        <p class="card-date">📅 ${event.date}</p>
+        <p class="card-location">${event.location}</p>
+        <p class="card-date">${event.date}</p>
         <p class="card-description">${event.description}</p>
         <div class="card-footer">
           <span class="card-price">${event.price}</span>
@@ -331,12 +329,12 @@ function createEventTimelineItem(event) {
   return `
     <div class="timeline-item" data-category="events">
       <div class="timeline-date">
-        <span class="timeline-emoji">${event.image}</span>
+        <img class="timeline-img" src="${getImageUrl(event)}" alt="${event.name}" loading="lazy">
         <span>${event.date}</span>
       </div>
       <div class="timeline-content">
         <h3>${event.name}</h3>
-        <p class="timeline-location">📍 ${event.location}</p>
+        <p class="timeline-location">${event.location}</p>
         <p>${event.description}</p>
         <div class="timeline-footer">
           <span class="platform-tag ${event.platform}">${capitalize(event.platform)}</span>

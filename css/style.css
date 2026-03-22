@@ -435,11 +435,6 @@ h1, h2, h3 {
   background: linear-gradient(135deg, #7b2d8e, #c44569);
 }
 
-.card-emoji {
-  font-size: 4rem;
-  z-index: 0;
-  /* Visible only as fallback when no image loads */
-}
 
 .card-badge,
 .platform-badge {
@@ -680,18 +675,15 @@ h1, h2, h3 {
   text-align: center;
 }
 
-.timeline-emoji {
-  font-size: 2rem;
-  background: var(--bg-light);
+.timeline-img {
   width: 56px;
   height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   border-radius: 50%;
+  object-fit: cover;
   box-shadow: var(--shadow);
   position: relative;
   z-index: 1;
+  flex-shrink: 0;
 }
 
 .timeline-date span:last-child {
@@ -1006,10 +998,9 @@ h1, h2, h3 {
     min-width: 56px;
   }
 
-  .timeline-emoji {
+  .timeline-img {
     width: 48px;
     height: 48px;
-    font-size: 1.5rem;
   }
 
   .timeline-content {
