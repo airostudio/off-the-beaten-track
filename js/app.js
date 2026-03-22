@@ -244,13 +244,26 @@ function filterResults(category, btn) {
   });
 }
 
-// ---- Image filename helper (must match generate-images.js) ----
-function nameToImageFile(name) {
-  return 'images/' + name
+// ---- Image URL helper ----
+const IMG_STOP_WORDS = new Set([
+  'with','from','into','over','through','across','along','between','against',
+  'around','during','upon','about','this','that','these','those','have','been',
+  'were','will','would','could','should','their','there','where','which','while',
+  'after','before','when','then','than','also','some','more','most','onto','only',
+  'very','each','both','such','even','just','here','like','high','wide','deep',
+  'vast','under','near','away','views','light','ancient','local','small','large',
+]);
+
+function getImageUrl(item) {
+  const prompt = item.imagePrompt || item.name || '';
+  const keywords = prompt
     .toLowerCase()
-    .replace(/['''`]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '') + '.jpg';
+    .replace(/[^a-z\s]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length > 3 && !IMG_STOP_WORDS.has(w))
+    .slice(0, 4)
+    .join(',');
+  return `https://source.unsplash.com/featured/800x600/?${encodeURIComponent(keywords || 'travel,landscape')}`;
 }
 
 // ---- Rendering ----
@@ -258,7 +271,7 @@ function createGemCard(gem) {
   const platformBadge = getPlatformBadge(gem.platform);
   const stars = getStarRating(gem.rating);
   const bookingUrl = getBookingUrl(gem.platform, gem.name);
-  const imgSrc = nameToImageFile(gem.name);
+  const imgSrc = getImageUrl(gem);
 
   return `
     <div class="card" data-category="${gem.category}" data-platform="${gem.platform}">
@@ -288,7 +301,7 @@ function createGemCard(gem) {
 function createEventCard(event) {
   const platformBadge = getPlatformBadge(event.platform);
   const bookingUrl = getBookingUrl(event.platform, event.name);
-  const imgSrc = nameToImageFile(event.name);
+  const imgSrc = getImageUrl(event);
 
   return `
     <div class="card event-card" data-category="events" data-platform="${event.platform}">
