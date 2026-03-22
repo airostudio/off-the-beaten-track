@@ -255,15 +255,19 @@ const IMG_STOP_WORDS = new Set([
 ]);
 
 function getImageUrl(item) {
-  const prompt = item.imagePrompt || item.name || '';
-  const keywords = prompt
+  // Deterministic seed from name so each destination always gets the same photo
+  const seed = [...(item.name || '')].reduce((a, c) => (a * 31 + c.charCodeAt(0)) & 0xfffff, 0);
+  // Use the name for specific recognisable terms, fall back to imagePrompt nouns
+  const source = item.name || item.imagePrompt || '';
+  const keywords = source
     .toLowerCase()
     .replace(/[^a-z\s]/g, ' ')
     .split(/\s+/)
     .filter(w => w.length > 3 && !IMG_STOP_WORDS.has(w))
-    .slice(0, 4)
-    .join(',');
-  return `https://source.unsplash.com/featured/800x600/?${encodeURIComponent(keywords || 'travel,landscape')}`;
+    .slice(0, 3)
+    .join(',') || 'travel,landscape';
+  // loremflickr expects commas unencoded in the path segment
+  return `https://loremflickr.com/800/600/${keywords}?lock=${seed}`;
 }
 
 // ---- Rendering ----
