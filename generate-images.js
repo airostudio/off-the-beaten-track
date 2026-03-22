@@ -90,7 +90,8 @@ function loadData() {
   const src = fs.readFileSync(path.join(__dirname, 'js', 'data.js'), 'utf8');
   const ctx = { LOCATIONS: {}, EVENTS: [], LOCATION_COORDS: {} };
   vm.createContext(ctx);
-  vm.runInContext(src, ctx);
+  // Strip const/let/var so assignments land on the context object
+  vm.runInContext(src.replace(/\b(const|let|var)\s+/g, ''), ctx);
   return ctx;
 }
 
