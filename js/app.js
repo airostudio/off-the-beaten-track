@@ -18,6 +18,15 @@ document.addEventListener('DOMContentLoaded', () => {
   setupMobileNav();
 });
 
+// CSP-compliant image fallback: handle missing local images by swapping to loremflickr
+document.addEventListener('error', (e) => {
+  const img = e.target;
+  if (img.tagName === 'IMG' && img.dataset.fallback) {
+    img.src = img.dataset.fallback;
+    delete img.dataset.fallback;
+  }
+}, true);
+
 // ---- Geolocation Detection ----
 function detectLocation() {
   const banner = document.getElementById('locationBanner');
@@ -287,7 +296,7 @@ function createGemCard(gem) {
   return `
     <div class="card" data-category="${gem.category}" data-platform="${gem.platform}">
       <div class="card-image">
-        <img class="card-img" src="${getLocalImagePath(gem)}" onerror="this.onerror=null;this.src='${getLoremFlickrUrl(gem)}'" alt="${gem.name}" loading="lazy">
+        <img class="card-img" src="${getLocalImagePath(gem)}" data-fallback="${getLoremFlickrUrl(gem)}" alt="${gem.name}" loading="lazy">
         <span class="card-badge ${gem.type}">${gem.type === 'tour' ? 'Tour' : 'Destination'}</span>
         ${platformBadge}
       </div>
@@ -314,7 +323,7 @@ function createEventCard(event) {
   return `
     <div class="card event-card" data-category="events" data-platform="${event.platform}">
       <div class="card-image event-image">
-        <img class="card-img" src="${getLocalImagePath(event)}" onerror="this.onerror=null;this.src='${getLoremFlickrUrl(event)}'" alt="${event.name}" loading="lazy">
+        <img class="card-img" src="${getLocalImagePath(event)}" data-fallback="${getLoremFlickrUrl(event)}" alt="${event.name}" loading="lazy">
         <span class="card-badge events">Event</span>
         ${platformBadge}
       </div>
@@ -338,7 +347,7 @@ function createEventTimelineItem(event) {
   return `
     <div class="timeline-item" data-category="events">
       <div class="timeline-date">
-        <img class="timeline-img" src="${getLocalImagePath(event)}" onerror="this.onerror=null;this.src='${getLoremFlickrUrl(event)}'" alt="${event.name}" loading="lazy">
+        <img class="timeline-img" src="${getLocalImagePath(event)}" data-fallback="${getLoremFlickrUrl(event)}" alt="${event.name}" loading="lazy">
         <span>${event.date}</span>
       </div>
       <div class="timeline-content">
@@ -405,12 +414,14 @@ function filterDisplayedCards(gridId, category, platform) {
 
 // ---- Platform Helpers ----
 function getPlatformBadge(platform) {
-  const labels = {
-    tripadvisor: '🟢 TripAdvisor',
-    getyourguide: '🟠 GetYourGuide',
-    withlocals: '🔵 Withlocals'
+  const platforms = {
+    tripadvisor: { label: '🟢 TripAdvisor', cls: 'tripadvisor' },
+    getyourguide: { label: '🟠 GetYourGuide', cls: 'getyourguide' },
+    withlocals: { label: '🔵 Withlocals', cls: 'withlocals' }
   };
-  return `<span class="platform-badge ${platform}">${labels[platform] || platform}</span>`;
+  const p = platforms[platform];
+  if (!p) return '';
+  return `<span class="platform-badge ${p.cls}">${p.label}</span>`;
 }
 
 function getBookingUrl(platform, name) {
