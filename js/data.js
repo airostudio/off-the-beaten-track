@@ -1418,7 +1418,7 @@ const LOCATION_COORDS = {
   "Kyrgyzstan": { lat: 41.2, lng: 74.7 },
   "Faroe Islands": { lat: 62.0, lng: -6.8 },
   "Bosnia & Herzegovina": { lat: 43.9, lng: 17.7 },
-  "Vietnam": { lat: 23.0, lng: 105.3 },
+  "Vietnam": { lat: 16.0, lng: 107.8 },
   "Namibia": { lat: -22.9, lng: 18.5 },
   "Armenia": { lat: 40.1, lng: 45.0 },
   "Madagascar": { lat: -18.8, lng: 47.0 }

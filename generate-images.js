@@ -39,8 +39,32 @@ function nameToFilename(name) {
     .replace(/^-|-$/g, '') + '.jpg';
 }
 
+// ---- Use Gemini text model to craft an intelligent, location-specific scene prompt ----
+async function craftScenePrompt(name, imagePrompt, location) {
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.0-flash',
+      contents: [{
+        role: 'user',
+        parts: [{ text: `You are a professional travel photographer preparing a shot list.
+
+Tour/Destination: "${name}"
+Location: ${location}
+Context: ${imagePrompt}
+
+Write a single vivid scene description (2–3 sentences) for a travel photograph that captures the most iconic, recognisable visual elements of this specific place: its unique landscape, architecture, cultural details, colours, atmosphere, and time of day. Be concrete and geographically precise — describe what you would actually see standing there. Output only the scene description, no extra commentary.` }]
+      }]
+    });
+    return response.text?.trim() || imagePrompt;
+  } catch (err) {
+    // If text model fails, fall back to original prompt
+    console.warn(`  ⚠️   Scene prompt generation failed for "${name}", using original. (${err.message})`);
+    return imagePrompt;
+  }
+}
+
 // ---- Generate one image ----
-async function generateImage(name, imagePrompt) {
+async function generateImage(name, imagePrompt, location) {
   const filename = nameToFilename(name);
   const filepath = path.join(IMAGES_DIR, filename);
 
@@ -49,16 +73,19 @@ async function generateImage(name, imagePrompt) {
     return;
   }
 
+  // Let Gemini craft the best scene description for this specific place
+  process.stdout.write(`       ✨ Crafting scene prompt...\n`);
+  const scenePrompt = await craftScenePrompt(name, imagePrompt, location);
+
   const prompt = [
-    'Ultra-realistic travel photography,',
-    imagePrompt,
-    'Professional DSLR photo, natural lighting, vivid colors, sharp focus,',
+    'Ultra-realistic travel photography.',
+    scenePrompt,
+    'Professional DSLR photo, natural lighting, vivid colours, sharp focus,',
     'cinematic composition, 16:9 aspect ratio, no text, no watermarks,',
     'National Geographic quality.'
   ].join(' ');
 
   try {
-    // Primary: Imagen 3 via Gemini AI (gemini-imagen-pro quality)
     const response = await ai.models.generateImages({
       model: 'imagen-3.0-generate-002',
       prompt,
@@ -126,9 +153,9 @@ async function main() {
   let done = 0;
   for (const item of items) {
     process.stdout.write(`  [${++done}/${items.length}] ${item.name} (${item.label})\n`);
-    await generateImage(item.name, item.imagePrompt);
-    // Respect Imagen rate limits: ~1 req/2s on free tier
-    await sleep(2200);
+    await generateImage(item.name, item.imagePrompt, item.label);
+    // Respect Imagen rate limits: ~1 req/2s on free tier (extra 800ms for text model call)
+    await sleep(3000);
   }
 
   console.log(`\n✨  Done! ${done} images processed → ./images/\n`);

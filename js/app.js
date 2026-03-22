@@ -51,39 +51,72 @@ function detectLocation() {
   );
 }
 
-function reverseGeocode(lat, lng) {
-  const text = document.getElementById('locationText');
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return R * 2 * Math.asin(Math.sqrt(a));
+}
 
-  // Find nearest country from our database
-  let nearestCountry = null;
+function nearestCountryFromCoords(lat, lng) {
+  let nearest = null;
   let minDist = Infinity;
-
   for (const [country, coords] of Object.entries(LOCATION_COORDS)) {
-    const dist = Math.sqrt(
-      Math.pow(lat - coords.lat, 2) + Math.pow(lng - coords.lng, 2)
-    );
+    const dist = haversineKm(lat, lng, coords.lat, coords.lng);
     if (dist < minDist) {
       minDist = dist;
-      nearestCountry = country;
+      nearest = country;
     }
   }
+  return nearest;
+}
 
-  userCountry = nearestCountry;
+function applyCountry(country, lat, lng) {
+  const text = document.getElementById('locationText');
+  userCountry = country;
   userLocation = { lat, lng };
-
-  text.innerHTML = `Showing hidden gems near <strong>${nearestCountry}</strong>`;
-
-  // Pre-select the country in search
+  text.innerHTML = `Showing hidden gems near <strong>${country}</strong>`;
   const countrySelect = document.getElementById('searchCountry');
   for (let i = 0; i < countrySelect.options.length; i++) {
-    if (countrySelect.options[i].value === nearestCountry) {
+    if (countrySelect.options[i].value === country) {
       countrySelect.selectedIndex = i;
       updateStates();
       break;
     }
   }
+  renderNearYou(country);
+}
 
-  renderNearYou(nearestCountry);
+function reverseGeocode(lat, lng) {
+  const text = document.getElementById('locationText');
+  text.textContent = 'Detecting your location…';
+
+  // Try Nominatim for precise reverse geocoding, fall back to Haversine matching
+  fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=3`, {
+    headers: { 'Accept-Language': 'en' }
+  })
+    .then(r => r.json())
+    .then(data => {
+      const nominatimCountry = data?.address?.country;
+      // Check if Nominatim returned a country we have in our database
+      const match = nominatimCountry && Object.keys(LOCATION_COORDS).find(
+        c => c.toLowerCase() === nominatimCountry.toLowerCase() ||
+             nominatimCountry.toLowerCase().includes(c.toLowerCase()) ||
+             c.toLowerCase().includes(nominatimCountry.toLowerCase())
+      );
+      if (match) {
+        applyCountry(match, lat, lng);
+      } else {
+        // Country not in our DB yet — fall back to nearest in DB
+        applyCountry(nearestCountryFromCoords(lat, lng), lat, lng);
+      }
+    })
+    .catch(() => {
+      applyCountry(nearestCountryFromCoords(lat, lng), lat, lng);
+    });
 }
 
 function showDefaultNearYou() {
