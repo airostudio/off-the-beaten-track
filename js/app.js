@@ -244,15 +244,26 @@ function filterResults(category, btn) {
   });
 }
 
+// ---- Image filename helper (must match generate-images.js) ----
+function nameToImageFile(name) {
+  return 'images/' + name
+    .toLowerCase()
+    .replace(/['''`]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '') + '.jpg';
+}
+
 // ---- Rendering ----
 function createGemCard(gem) {
   const platformBadge = getPlatformBadge(gem.platform);
   const stars = getStarRating(gem.rating);
   const bookingUrl = getBookingUrl(gem.platform, gem.name);
+  const imgSrc = nameToImageFile(gem.name);
 
   return `
     <div class="card" data-category="${gem.category}" data-platform="${gem.platform}">
       <div class="card-image">
+        <img class="card-img" src="${imgSrc}" alt="${gem.name}" loading="lazy" onerror="this.remove()">
         <span class="card-emoji">${gem.image}</span>
         <span class="card-badge ${gem.type}">${gem.type === 'tour' ? 'Tour' : 'Destination'}</span>
         ${platformBadge}
@@ -277,10 +288,12 @@ function createGemCard(gem) {
 function createEventCard(event) {
   const platformBadge = getPlatformBadge(event.platform);
   const bookingUrl = getBookingUrl(event.platform, event.name);
+  const imgSrc = nameToImageFile(event.name);
 
   return `
     <div class="card event-card" data-category="events" data-platform="${event.platform}">
       <div class="card-image event-image">
+        <img class="card-img" src="${imgSrc}" alt="${event.name}" loading="lazy" onerror="this.remove()">
         <span class="card-emoji">${event.image}</span>
         <span class="card-badge events">Event</span>
         ${platformBadge}
