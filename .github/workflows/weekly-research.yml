@@ -1,0 +1,71 @@
+name: Weekly Tour Research
+
+on:
+  schedule:
+    # Every Monday at 06:00 UTC
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (preview only, no changes committed)'
+        required: false
+        default: 'false'
+      limit:
+        description: 'Max articles to process'
+        required: false
+        default: '20'
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Research latest tours from travelandtourworld.com
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          DRY=${{ github.event.inputs.dry_run || 'false' }}
+          LIMIT=${{ github.event.inputs.limit || '20' }}
+          FLAGS="--limit $LIMIT"
+          if [ "$DRY" = "true" ]; then FLAGS="$FLAGS --dry-run"; fi
+          node research-tours.js $FLAGS
+
+      - name: Generate images for new tours
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: node generate-images.js
+
+      - name: Commit and push updates
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add js/data.js images/
+          if git diff --cached --quiet; then
+            echo "Nothing new to commit."
+          else
+            WEEK=$(date '+%Y-W%V')
+            COUNT=$(git diff --cached --name-only | grep -c 'images/' || true)
+            git commit -m "chore: weekly tour research ${WEEK} — ${COUNT} new images
+
+Auto-updated from travelandtourworld.com by weekly-research workflow."
+            git push origin HEAD
+          fi
