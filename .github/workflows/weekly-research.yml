@@ -37,8 +37,6 @@ jobs:
         run: npm install
 
       - name: Research latest tours from travelandtourworld.com
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           DRY=${{ github.event.inputs.dry_run || 'false' }}
           LIMIT=${{ github.event.inputs.limit || '20' }}
@@ -48,8 +46,6 @@ jobs:
 
       - name: Generate images for new tours
         if: ${{ github.event.inputs.dry_run != 'true' }}
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: node generate-images.js
 
       - name: Commit and push updates

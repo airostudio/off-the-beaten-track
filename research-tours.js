@@ -7,9 +7,9 @@
 // tour data, then merges new entries into js/data.js.
 //
 // Usage:
-//   GEMINI_API_KEY=your_key node research-tours.js
-//   GEMINI_API_KEY=your_key node research-tours.js --dry-run   # preview only
-//   GEMINI_API_KEY=your_key node research-tours.js --limit 5   # cap articles processed
+//   node research-tours.js
+//   node research-tours.js --dry-run   # preview only
+//   node research-tours.js --limit 5   # cap articles processed
 // ============================================================
 
 const { GoogleGenAI } = require('@google/genai');
@@ -23,12 +23,6 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const DRY_RUN  = process.argv.includes('--dry-run');
 const LIMIT_IDX = process.argv.indexOf('--limit');
 const MAX_ARTICLES = LIMIT_IDX !== -1 ? parseInt(process.argv[LIMIT_IDX + 1], 10) : 20;
-
-if (!GEMINI_API_KEY) {
-  console.error('\n❌  GEMINI_API_KEY not set.');
-  console.error('    Usage: GEMINI_API_KEY=your_key node research-tours.js\n');
-  process.exit(1);
-}
 
 const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 

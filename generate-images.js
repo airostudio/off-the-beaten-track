@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 // ============================================================
 // Off The Beaten Track — AI Image Generator
-// Uses Google Gemini Imagen 3 (gemini-imagen-pro) for
-// ultra-realistic, true-to-life travel photography
+// Uses Google Gemini Imagen 3 for ultra-realistic travel photography
 //
 // Usage:
-//   GEMINI_API_KEY=your_key node generate-images.js
-//   GEMINI_API_KEY=your_key node generate-images.js --force   # re-generate all
+//   node generate-images.js
+//   node generate-images.js --force   # re-generate all
 // ============================================================
 
 const { GoogleGenAI } = require('@google/genai');
@@ -17,12 +16,6 @@ const vm = require('vm');
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const FORCE = process.argv.includes('--force');
 const IMAGES_DIR = path.join(__dirname, 'images');
-
-if (!GEMINI_API_KEY) {
-  console.error('\n❌  GEMINI_API_KEY not set.');
-  console.error('    Usage: GEMINI_API_KEY=your_key node generate-images.js\n');
-  process.exit(1);
-}
 
 if (!fs.existsSync(IMAGES_DIR)) {
   fs.mkdirSync(IMAGES_DIR, { recursive: true });
