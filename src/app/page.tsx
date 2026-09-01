@@ -1,23 +1,9 @@
-import { SearchWidget } from '@/components/search/SearchWidget';
+import { HeroSlideshow } from '@/components/home/HeroSlideshow';
 
 export default function HomePage() {
   return (
     <main>
-      <section className="bg-navy-950">
-        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-24">
-          <h1 className="max-w-2xl text-4xl font-bold leading-tight text-white sm:text-5xl">
-            Never overpay for a flight again.
-          </h1>
-          <p className="mt-4 max-w-xl text-lg text-slate-300">
-            We compare airlines, booking sites and smarter route combinations — then give members our
-            strongest flight deals first.
-          </p>
-          <div className="mt-8">
-            <SearchWidget />
-          </div>
-          <p className="mt-4 text-sm text-slate-400">Members save up to 35% on selected deals.</p>
-        </div>
-      </section>
+      <HeroSlideshow />
 
       <section className="mx-auto max-w-7xl px-6 py-16">
         <div className="grid gap-8 sm:grid-cols-3">
