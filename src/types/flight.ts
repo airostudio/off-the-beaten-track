@@ -59,6 +59,13 @@ export interface NormalisedFlightOffer {
 
   /** Whether a genuine member rate is available for this specific offer. */
   memberEligible: boolean;
+
+  /**
+   * Set when this offer flies from/to a nearby alternate airport rather than
+   * the one the traveller searched — must always be surfaced in the UI so
+   * the airport swap is never hidden (section 12).
+   */
+  alternateAirportNote?: string;
 }
 
 export interface FlightValueScoreBreakdown {

@@ -25,6 +25,7 @@ export function SearchWidget() {
   const [returnDate, setReturnDate] = useState(defaultDate(44));
   const [cabin, setCabin] = useState<CabinClass>('ECONOMY');
   const [passengers, setPassengers] = useState(1);
+  const [includeNearbyAirports, setIncludeNearbyAirports] = useState(false);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -35,6 +36,7 @@ export function SearchWidget() {
       returnDate,
       cabin,
       passengers: String(passengers),
+      includeNearbyAirports: String(includeNearbyAirports),
     });
     router.push(`/search?${params.toString()}`);
   }
@@ -102,6 +104,14 @@ export function SearchWidget() {
           />
         </Field>
       </div>
+      <label className="col-span-full flex items-center gap-2 text-xs text-navy-700 lg:col-span-2">
+        <input
+          type="checkbox"
+          checked={includeNearbyAirports}
+          onChange={(e) => setIncludeNearbyAirports(e.target.checked)}
+        />
+        Also check nearby airports
+      </label>
       <button
         type="submit"
         className="col-span-full rounded-xl bg-accent-500 px-6 py-3 font-semibold text-white transition hover:bg-accent-600 lg:col-span-1"

@@ -77,6 +77,13 @@ export function pickImage(destination: Destination, seed = Date.now()): string {
   return destination.images[index];
 }
 
+/**
+ * A punchy "Clarendon-esque" Instagram-style treatment — boosted saturation
+ * and contrast plus a warm highlight — for scenes that should feel like a
+ * travel-feed shot rather than a flat, literal photo.
+ */
+export const INSTAGRAM_FILTER = 'saturate(1.6) contrast(1.15) brightness(1.05) sepia(0.08)';
+
 /** The three hero scenes for the homepage brand slideshow. */
 export const HERO_SCENES = [
   {
@@ -92,6 +99,8 @@ export const HERO_SCENES = [
     headline: 'Never overpay to get here.',
     body: 'We compare airlines and route combinations most search engines miss.',
     image: pexels(31340332),
+    filter: INSTAGRAM_FILTER,
+    tint: 'linear-gradient(180deg, rgba(0,180,220,0.12), rgba(255,150,60,0.10))',
   },
   {
     key: 'mountain',

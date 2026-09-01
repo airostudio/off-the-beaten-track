@@ -4,6 +4,10 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { ClientFlightOffer } from '@/types/flight';
 import { FlightCard } from '@/components/results/FlightCard';
+import { CreateAlertButton } from '@/components/alerts/CreateAlertButton';
+import { FareHistory } from '@/components/results/FareHistory';
+import { FareCalendar } from '@/components/results/FareCalendar';
+import type { CabinClass } from '@/types/user';
 
 interface SearchResponse {
   tier: 'GUEST' | 'FREE' | 'MEMBER';
@@ -40,6 +44,7 @@ export function SearchResults() {
         returnDate: params.get('returnDate') || undefined,
         cabin: params.get('cabin') || 'ECONOMY',
         passengers: Number(params.get('passengers') || 1),
+        includeNearbyAirports: params.get('includeNearbyAirports') === 'true',
       }),
     })
       .then(async (res) => {
@@ -83,6 +88,8 @@ export function SearchResults() {
     );
   }
 
+  const cheapest = Math.min(...data.offers.map((o) => (o.memberPrice ?? o.publicPrice) / 100));
+
   return (
     <div>
       {data.membershipPitch && (
@@ -90,6 +97,28 @@ export function SearchResults() {
           <p className="font-semibold">{data.membershipPitch}</p>
         </div>
       )}
+
+      <div className="mb-4 flex items-center justify-between">
+        <p className="text-sm text-slate-500">{data.offers.length} fares found</p>
+        <CreateAlertButton
+          origin={params.get('origin')!}
+          destination={params.get('destination')!}
+          cabin={(params.get('cabin') as CabinClass) || 'ECONOMY'}
+          suggestedMaxPrice={cheapest}
+        />
+      </div>
+
+      <FareCalendar
+        origin={params.get('origin')!}
+        destination={params.get('destination')!}
+        centerDate={params.get('departureDate')!}
+        cabin={(params.get('cabin') as CabinClass) || 'ECONOMY'}
+      />
+
+      <div className="mb-6">
+        <FareHistory origin={params.get('origin')!} destination={params.get('destination')!} />
+      </div>
+
       <div className="space-y-4">
         {data.offers.map((offer) => (
           <FlightCard key={offer.id} offer={offer} />

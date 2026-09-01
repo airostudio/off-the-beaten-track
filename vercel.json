@@ -1,0 +1,6 @@
+{
+  "crons": [
+    { "path": "/api/cron/discover-deals", "schedule": "0 */6 * * *" },
+    { "path": "/api/cron/refresh-watchlist", "schedule": "0 */6 * * *" }
+  ]
+}

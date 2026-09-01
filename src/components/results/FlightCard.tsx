@@ -1,6 +1,7 @@
 import type { ClientFlightOffer, FlightBadge } from '@/types/flight';
 import { formatMoney, formatDuration, formatTime } from '@/lib/format';
 import { MemberFareLock } from './MemberFareLock';
+import { WatchTripButton } from '@/components/watchlist/WatchTripButton';
 
 const BADGE_LABEL: Record<FlightBadge, string> = {
   BEST_VALUE: 'Best value',
@@ -23,7 +24,16 @@ export function FlightCard({ offer }: { offer: ClientFlightOffer }) {
               {BADGE_LABEL[b]}
             </span>
           ))}
+          {offer.alternateAirportNote && (
+            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
+              Alternate airport
+            </span>
+          )}
         </div>
+
+        {offer.alternateAirportNote && (
+          <p className="mb-1 text-xs text-amber-700">{offer.alternateAirportNote}</p>
+        )}
 
         <p className="text-sm font-semibold text-navy-900">
           {offer.airline} {offer.flightNumber ? `· ${offer.flightNumber}` : ''}
@@ -77,6 +87,15 @@ export function FlightCard({ offer }: { offer: ClientFlightOffer }) {
         >
           View flight
         </a>
+
+        <WatchTripButton
+          origin={offer.origin}
+          destination={offer.destination}
+          departureDate={offer.departureAt.slice(0, 10)}
+          cabin={offer.cabin}
+          priceWhenWatched={offer.memberPrice ?? offer.publicPrice}
+          currency={offer.currency}
+        />
       </div>
     </article>
   );

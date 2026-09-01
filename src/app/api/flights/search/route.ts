@@ -7,6 +7,8 @@ import { dedupeOffers } from '@/lib/flights/dedupe';
 import { rankOffers } from '@/lib/flights/valueScore';
 import { applyTierAccess } from '@/lib/flights/applyTierAccess';
 import { createSupabaseServiceClient } from '@/lib/supabase/server';
+import { getNearbyAirports } from '@/lib/flights/nearbyAirports';
+import type { NormalisedFlightOffer } from '@/types/flight';
 
 const searchSchema = z.object({
   origin: z.string().length(3).toUpperCase(),
@@ -15,6 +17,7 @@ const searchSchema = z.object({
   returnDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   cabin: z.enum(['ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS', 'FIRST']).default('ECONOMY'),
   passengers: z.coerce.number().int().min(1).max(9).default(1),
+  includeNearbyAirports: z.boolean().default(false),
 });
 
 export async function POST(request: NextRequest) {
@@ -47,7 +50,30 @@ export async function POST(request: NextRequest) {
   const providers = getActiveProviders();
 
   const results = await Promise.allSettled(providers.map((p) => p.searchFlights(req)));
-  const rawOffers = results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
+  const rawOffers: NormalisedFlightOffer[] = results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
+
+  // Nearby/alternative airport search (section 12): also query alternate
+  // origin/destination airports and merge them in, clearly labelled so the
+  // airport swap is never hidden from the traveller.
+  if (req.includeNearbyAirports) {
+    const nearbyOrigins = getNearbyAirports(req.origin);
+    const nearbyDestinations = getNearbyAirports(req.destination);
+    const alternatePairs = [
+      ...nearbyOrigins.map((a) => ({ origin: a.code, destination: req.destination, note: a.extraNote })),
+      ...nearbyDestinations.map((a) => ({ origin: req.origin, destination: a.code, note: a.extraNote })),
+    ];
+
+    const alternateResults = await Promise.allSettled(
+      alternatePairs.flatMap((pair) =>
+        providers.map((p) =>
+          p
+            .searchFlights({ ...req, origin: pair.origin, destination: pair.destination })
+            .then((offers) => offers.map((o) => ({ ...o, alternateAirportNote: pair.note })))
+        )
+      )
+    );
+    rawOffers.push(...alternateResults.flatMap((r) => (r.status === 'fulfilled' ? r.value : [])));
+  }
 
   if (rawOffers.length === 0) {
     return NextResponse.json(
@@ -77,6 +103,29 @@ export async function POST(request: NextRequest) {
     })
     .select('id')
     .single();
+
+  // Record cheapest-per-airline observations for fare history graphs (section 14),
+  // independent of any single search_id so history survives across searches.
+  const routeKey = `${req.origin}-${req.destination}`;
+  const cheapestByAirline = new Map<string, (typeof deduped)[number]>();
+  for (const o of deduped) {
+    const existing = cheapestByAirline.get(o.airline);
+    if (!existing || o.publicPrice < existing.publicPrice) cheapestByAirline.set(o.airline, o);
+  }
+  await service.from('fare_observations').insert(
+    Array.from(cheapestByAirline.values()).map((o) => ({
+      route_key: routeKey,
+      origin: req.origin,
+      destination: req.destination,
+      outbound_date: req.departureDate,
+      inbound_date: req.returnDate ?? null,
+      airline: o.airline,
+      cabin: req.cabin,
+      provider_id: o.provider,
+      price: o.publicPrice,
+      currency: o.currency,
+    }))
+  );
 
   if (searchRow) {
     await service.from('flight_offers').insert(

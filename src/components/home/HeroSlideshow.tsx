@@ -29,9 +29,13 @@ export function HeroSlideshow() {
             className="h-full w-full bg-cover bg-center"
             style={{
               backgroundImage: `url(${scene.image})`,
+              filter: 'filter' in scene ? scene.filter : undefined,
               animation: i === activeIndex ? `ken-burns ${SCENE_DURATION_MS + 1500}ms ease-out forwards` : undefined,
             }}
           />
+          {'tint' in scene && (
+            <div className="absolute inset-0 mix-blend-overlay" style={{ background: scene.tint }} />
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-950/40 to-navy-950/10" />
         </div>
       ))}
