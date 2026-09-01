@@ -1,0 +1,100 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import type { ClientFlightOffer } from '@/types/flight';
+import { FlightCard } from '@/components/results/FlightCard';
+
+interface SearchResponse {
+  tier: 'GUEST' | 'FREE' | 'MEMBER';
+  offers: ClientFlightOffer[];
+  membershipPitch: string | null;
+  error?: string;
+  message?: string;
+}
+
+export function SearchResults() {
+  const params = useSearchParams();
+  const [data, setData] = useState<SearchResponse | null>(null);
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const origin = params.get('origin');
+    const destination = params.get('destination');
+    const departureDate = params.get('departureDate');
+    if (!origin || !destination || !departureDate) {
+      setStatus('error');
+      setErrorMessage('Missing search parameters.');
+      return;
+    }
+
+    setStatus('loading');
+    fetch('/api/flights/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        origin,
+        destination,
+        departureDate,
+        returnDate: params.get('returnDate') || undefined,
+        cabin: params.get('cabin') || 'ECONOMY',
+        passengers: Number(params.get('passengers') || 1),
+      }),
+    })
+      .then(async (res) => {
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.message ?? json.error ?? 'Search failed');
+        return json as SearchResponse;
+      })
+      .then((json) => {
+        setData(json);
+        setStatus('ready');
+      })
+      .catch((err) => {
+        setErrorMessage(err.message);
+        setStatus('error');
+      });
+  }, [params]);
+
+  if (status === 'loading') {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-32 animate-pulse rounded-2xl bg-slate-200/60" />
+        ))}
+      </div>
+    );
+  }
+
+  if (status === 'error') {
+    return (
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">
+        {errorMessage ?? 'Something went wrong.'}
+      </div>
+    );
+  }
+
+  if (!data || data.offers.length === 0) {
+    return (
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-500">
+        No fares found for this route yet. Try adjusting your dates.
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {data.membershipPitch && (
+        <div className="mb-6 rounded-2xl bg-navy-950 p-5 text-white">
+          <p className="font-semibold">{data.membershipPitch}</p>
+        </div>
+      )}
+      <div className="space-y-4">
+        {data.offers.map((offer) => (
+          <FlightCard key={offer.id} offer={offer} />
+        ))}
+      </div>
+    </div>
+  );
+}
