@@ -106,6 +106,8 @@ export interface ClientFlightOffer extends Omit<ScoredFlightOffer, 'memberPrice'
     isLive: boolean;
     label: string; // e.g. "Verified 2 minutes ago"
   };
+  /** Stable flight_offers row id, when one exists — lets a "Book" click be recorded (section 31). */
+  dbOfferId?: string;
 }
 
 export interface FareDetails {

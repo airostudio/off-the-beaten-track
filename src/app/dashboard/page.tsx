@@ -41,11 +41,20 @@ export default async function DashboardOverviewPage() {
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
         <p className="text-sm text-slate-500">Membership status</p>
         <p className="mt-1 text-xl font-bold text-navy-950">
-          {viewer.tier === 'MEMBER' ? 'Active member' : 'Free account'}
+          {viewer.tier === 'MEMBER'
+            ? viewer.isComplimentaryMember
+              ? 'Member (referral credit)'
+              : 'Active member'
+            : 'Free account'}
         </p>
         {viewer.tier !== 'MEMBER' && (
           <Link href="/membership" className="mt-2 inline-block text-sm font-semibold text-accent-600">
             Upgrade for early access & member fares →
+          </Link>
+        )}
+        {viewer.isComplimentaryMember && (
+          <Link href="/dashboard/referrals" className="mt-2 inline-block text-sm font-semibold text-accent-600">
+            Refer more friends to extend it →
           </Link>
         )}
       </div>
