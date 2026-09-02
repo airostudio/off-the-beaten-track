@@ -13,6 +13,11 @@ const AIRLINES = [
 
 const HUBS = ['SIN', 'BKK', 'KUL', 'HKG'];
 
+// In-memory order store for this demo provider. A real provider (Duffel,
+// Amadeus, ...) persists orders on their own servers; our source of truth
+// for booking state either way is the app's own `bookings` table, not this.
+const mockOrders = new Map<string, FlightOrder>();
+
 /** Deterministic pseudo-random generator seeded from a string, so the same
  * search produces stable-but-varied results instead of Math.random() noise. */
 function seededRandom(seed: string) {
@@ -134,14 +139,32 @@ export class MockFlightProvider implements FlightProvider {
     return { carryOn: '7kg', checked: '23kg' };
   }
 
-  async createOrder(): Promise<FlightOrder> {
-    throw new NotImplementedError(this.name, 'createOrder');
+  /**
+   * Simulates instant order confirmation, the way most LCC/OTA direct APIs
+   * behave for a simple itinerary. A real GDS/NDC adapter would call the
+   * airline here and may return 'pending' while ticketing completes.
+   */
+  async createOrder(offerId: string): Promise<FlightOrder> {
+    const order: FlightOrder = {
+      id: `mock-order-${offerId}-${Date.now()}`,
+      offerId,
+      status: 'confirmed',
+      createdAt: new Date().toISOString(),
+    };
+    mockOrders.set(order.id, order);
+    return order;
   }
-  async cancelOrder(): Promise<void> {
-    throw new NotImplementedError(this.name, 'cancelOrder');
+
+  async cancelOrder(orderId: string): Promise<void> {
+    const order = mockOrders.get(orderId);
+    if (!order) throw new Error(`Unknown order ${orderId}`);
+    mockOrders.set(orderId, { ...order, status: 'cancelled' });
   }
-  async getOrder(): Promise<FlightOrder> {
-    throw new NotImplementedError(this.name, 'getOrder');
+
+  async getOrder(orderId: string): Promise<FlightOrder> {
+    const order = mockOrders.get(orderId);
+    if (!order) throw new Error(`Unknown order ${orderId}`);
+    return order;
   }
   async refreshOffer(offerId: string): Promise<NormalisedFlightOffer> {
     throw new NotImplementedError(this.name, 'refreshOffer');

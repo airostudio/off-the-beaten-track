@@ -106,7 +106,23 @@ against upstream. This is the airport-picker used by `AirportAutocomplete` on th
   (`/api/affiliate/click`, `dbOfferId` on every live/cached offer, `/admin/bookings` to confirm a real
   outcome until a live affiliate-network webhook exists); hotels/cars/insurance affiliate verticals
   (`travel_products` table, `/hotels` `/cars` `/insurance`, `/admin/travel-products` to manage listings).
-- **Phase 5** — direct booking via Duffel Orders/NDC, AI trip planning.
+- **Phase 5** (done) — direct booking architecture and an AI trip planner, built honestly against what
+  actually exists: real airline NDC/GDS credentials don't, so the booking path is fully wired end-to-end
+  against the mock provider (`MockFlightProvider.createOrder/getOrder/cancelOrder` now really work) using
+  the exact same `FlightProvider` interface a live Duffel adapter would use — a real one-time Stripe
+  Checkout Session collects payment (`/api/bookings/checkout`), and only a confirmed `checkout.session.completed`
+  webhook triggers `provider.createOrder()` (never before payment, and a ticketing failure after payment
+  is marked for manual follow-up, never silently "confirmed"). A "Book directly" button sits alongside
+  the affiliate link on every offer with a stable `dbOfferId`, per section 32's "don't make search depend
+  on affiliate redirects." The **AI Trip Planner** (`/plan`) extracts a structured trip request from free
+  text with a zero-dependency rule-based parser (`src/lib/tripPlanner/ruleBasedParser.ts`) that always
+  works, optionally upgraded to Claude (`claudeParser.ts`, strict tool-use extraction) when
+  `ANTHROPIC_API_KEY` is set — same never-block-on-a-missing-key pattern as `FLIGHT_PROVIDER_API_KEY`.
+  Extraction is a separate step from search (`/api/trip-planner/parse` → user reviews/edits →
+  `/api/trip-planner/run`) since every search has a real cost and a misparse shouldn't spend it. Results
+  reuse the existing engines rather than reinventing them: Best Value/Cheapest/Fastest/Best Member Deal
+  from `FlightValueScore`, Smart Route from the Phase 3 Alternative Route Engine, Most Comfortable from
+  Smart Mixed Cabin.
 
 ## Testing
 

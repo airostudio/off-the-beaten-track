@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import type Stripe from 'stripe';
 import { getStripe } from '@/lib/stripe/client';
 import { createSupabaseServiceClient } from '@/lib/supabase/server';
+import { getProviderById } from '@/lib/flights/registry';
 
 export const runtime = 'nodejs';
 
@@ -43,10 +44,15 @@ export async function POST(request: NextRequest) {
   switch (event.type) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session;
-      const userId = session.client_reference_id;
-      if (userId && session.subscription && session.customer) {
-        const sub = await stripe.subscriptions.retrieve(session.subscription as string);
-        await upsertSubscription(service, userId, sub);
+
+      if (session.mode === 'subscription') {
+        const userId = session.client_reference_id;
+        if (userId && session.subscription && session.customer) {
+          const sub = await stripe.subscriptions.retrieve(session.subscription as string);
+          await upsertSubscription(service, userId, sub);
+        }
+      } else if (session.mode === 'payment' && session.metadata?.booking_id) {
+        await confirmDirectBooking(service, session);
       }
       break;
     }
@@ -112,4 +118,46 @@ async function upsertSubscription(
   );
 
   await service.from('profiles').update({ tier: ['active', 'trialing', 'past_due'].includes(sub.status) ? 'MEMBER' : 'FREE' }).eq('id', userId);
+}
+
+/**
+ * Confirms a direct-booking payment (section 32/Phase 5). Only after Stripe
+ * confirms payment do we call the flight provider's createOrder() — this is
+ * the one place in the app that actually attempts to issue a ticket.
+ */
+async function confirmDirectBooking(service: ReturnType<typeof createSupabaseServiceClient>, session: Stripe.Checkout.Session) {
+  const bookingId = session.metadata!.booking_id;
+
+  const { data: booking } = await service
+    .from('bookings')
+    .update({
+      payment_status: 'paid',
+      stripe_payment_intent_id: typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id,
+      amount: session.amount_total ?? undefined,
+    })
+    .eq('id', bookingId)
+    .select('id, offer_id')
+    .single();
+
+  if (!booking?.offer_id) return;
+
+  const { data: offer } = await service.from('flight_offers').select('provider_id').eq('id', booking.offer_id).maybeSingle();
+  const provider = offer?.provider_id ? getProviderById(offer.provider_id) : null;
+
+  if (!provider) {
+    // No provider available to ticket with (e.g. Duffel key set but adapter
+    // still unimplemented) — payment is captured, but the booking needs
+    // manual follow-up rather than a false "confirmed" status.
+    await service.from('bookings').update({ status: 'redirected' }).eq('id', bookingId);
+    return;
+  }
+
+  try {
+    const order = await provider.createOrder(booking.offer_id);
+    await service.from('bookings').update({ status: 'confirmed', provider_order_id: order.id }).eq('id', bookingId);
+  } catch {
+    // Payment succeeded but ticketing failed — needs a human to resolve
+    // (refund or manual issuance). Never silently claim 'confirmed' here.
+    await service.from('bookings').update({ status: 'redirected' }).eq('id', bookingId);
+  }
 }
