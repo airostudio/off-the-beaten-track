@@ -1,13 +1,14 @@
 import { resolveViewer } from '@/lib/tiers';
 import { createSupabaseServiceClient } from '@/lib/supabase/server';
 import { SavingsMeter } from '@/components/dashboard/SavingsMeter';
+import { DestinationHero } from '@/components/dashboard/DestinationHero';
 import Link from 'next/link';
 
 export default async function DashboardOverviewPage() {
   const viewer = await resolveViewer();
   const service = createSupabaseServiceClient();
 
-  const [{ count: alertCount }, { count: savedSearchCount }, { data: rewards }, { data: subscription }] =
+  const [{ count: alertCount }, { count: savedSearchCount }, { data: rewards }, { data: subscription }, { data: lastSearch }] =
     await Promise.all([
       service.from('alerts').select('id', { count: 'exact', head: true }).eq('user_id', viewer.userId).eq('active', true),
       service.from('saved_searches').select('id', { count: 'exact', head: true }).eq('user_id', viewer.userId),
@@ -20,6 +21,13 @@ export default async function DashboardOverviewPage() {
         .select('*, plan:subscription_plans(price, currency)')
         .eq('user_id', viewer.userId ?? '')
         .maybeSingle(),
+      service
+        .from('searches')
+        .select('destination')
+        .eq('user_id', viewer.userId ?? '')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ]);
 
   const verifiedSavingsCents = (rewards ?? []).reduce((sum, r: any) => sum + Number(r.member_reward ?? 0), 0);
@@ -28,6 +36,8 @@ export default async function DashboardOverviewPage() {
 
   return (
     <div className="space-y-6">
+      <DestinationHero initialCode={lastSearch?.destination ?? null} />
+
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
         <p className="text-sm text-slate-500">Membership status</p>
         <p className="mt-1 text-xl font-bold text-navy-950">
