@@ -57,6 +57,13 @@ member_rewards, providers, admin_users, audit_logs, webhook_events) with RLS ena
 user-scoped tables. `fare_savings` exists specifically so every "members save X%" marketing claim is
 backed by a real, auditable public/member fare pair — see section 5 of the product brief.
 
+`0005_phase2.sql` adds `watched_trips` and notification release timing; `0006_all_world_airports.sql`
+seeds **every airport in the world with a real IATA code** (5,614 airports, from the OpenFlights
+Airports Database — public domain, sourced via the `airport-data` npm package). Regenerate it with
+`npm install --no-save airport-data && node scripts/generate-airports-seed.js` if you want to refresh
+against upstream. This is the airport-picker used by `AirportAutocomplete` on the search widget
+(`/api/airports/search`), not just a handful of hardcoded routes.
+
 ## Honesty constraints baked into the code
 
 - `member_price` in the DB and `memberPrice` in `NormalisedFlightOffer` are nullable and must only be
@@ -70,15 +77,22 @@ backed by a real, auditable public/member fare pair — see section 5 of the pro
 
 ## Phased roadmap
 
-This build implements **Phase 1** end-to-end: auth, Stripe subscriptions, three-tier access
-(GUEST/FREE/MEMBER), homepage, search widget, `FlightProvider` abstraction + mock provider, normalised
-results with value scoring, locked member-fare paywall, member dashboard, admin dashboard shell.
-
-- **Phase 2** — alerts/notifications delivery, watchlists, fare history graphs (`fare_observations` is
-  already modelled), deal-discovery background workers, member-first release timing enforcement,
-  flexible-date fare calendars, nearby-airport search.
-- **Phase 3** — real multi-provider comparison (Duffel/Amadeus adapters), alternative route/self-transfer
-  intelligence, Smart Mixed Cabin route construction, deal scoring, richer admin analytics.
+- **Phase 1** (done) — auth, Stripe subscriptions, three-tier access (GUEST/FREE/MEMBER), homepage,
+  search widget, `FlightProvider` abstraction + mock provider, normalised results with value scoring,
+  locked member-fare paywall, member dashboard, admin dashboard shell.
+- **Phase 2** (done) — fare alerts (create/toggle/delete), watchlist ("Watch this trip" +
+  price-vs-watched tracking), fare history (`fare_observations` + 30-day sparkline), deal-discovery
+  cron worker (`/api/cron/discover-deals`, real historical-average comparison), member-first
+  notification release timing (`deal_release_rules` + `notifications.visible_at`), flexible-date fare
+  calendar, nearby/alternative-airport search.
+- **Phase 3** (done) — every world airport seeded + searchable (`AirportAutocomplete`,
+  `/api/airports/search`); Alternative Route Engine and Smart Mixed Cabin
+  (`src/lib/flights/hubItineraries.ts` — genuinely priced two-leg self-transfer itineraries via SIN/
+  BKK/KUL/HKG, cabin chosen per leg from real queried duration vs the traveller's long-haul threshold);
+  provider fallback to cached fares when every live provider fails (`mapCachedOfferToClient`); a
+  `DuffelFlightProvider` scaffold (`src/lib/flights/providers/duffel.ts`, intentionally not wired in
+  until real API calls are implemented); richer admin analytics (ARR, average verified saving, popular
+  routes, provider error/latency stats from `provider_api_logs`).
 - **Phase 4** — mobile polish, referral program, commission-sharing payouts (`member_rewards` is already
   modelled), hotels/cars/insurance verticals.
 - **Phase 5** — direct booking via Duffel Orders/NDC, AI trip planning.

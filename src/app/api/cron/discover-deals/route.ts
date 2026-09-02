@@ -110,6 +110,26 @@ export async function POST(request: NextRequest) {
       if (deal) {
         dealsCreated++;
         await notifyMatchingAlerts(service, deal.id, route.origin, route.destination, cheapest.publicPrice);
+
+        // Audit trail for marketing savings claims (section 5) — only written
+        // when a genuine member rate exists for this exact discovered offer.
+        if (cheapest.memberEligible && cheapest.memberPrice != null) {
+          const savingAmount = cheapest.publicPrice - cheapest.memberPrice;
+          await service.from('fare_savings').insert({
+            route: `${route.origin} → ${route.destination}`,
+            airline: cheapest.airline,
+            cabin: 'ECONOMY',
+            public_fare: cheapest.publicPrice,
+            member_fare: cheapest.memberPrice,
+            saving_amount: savingAmount,
+            saving_percentage: Math.round((savingAmount / cheapest.publicPrice) * 100),
+            public_provider: cheapest.provider,
+            member_provider: cheapest.provider,
+            captured_at: new Date().toISOString(),
+            expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+            verification_status: 'verified',
+          });
+        }
       }
     }
   }
