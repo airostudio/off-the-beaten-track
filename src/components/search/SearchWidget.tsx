@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import type { CabinClass } from '@/types/user';
+import { AirportAutocomplete } from './AirportAutocomplete';
 
 const CABINS: { value: CabinClass; label: string }[] = [
   { value: 'ECONOMY', label: 'Economy' },
@@ -26,9 +27,15 @@ export function SearchWidget() {
   const [cabin, setCabin] = useState<CabinClass>('ECONOMY');
   const [passengers, setPassengers] = useState(1);
   const [includeNearbyAirports, setIncludeNearbyAirports] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!/^[A-Za-z]{3}$/.test(origin) || !/^[A-Za-z]{3}$/.test(destination)) {
+      setError('Pick an airport from the dropdown for both From and To.');
+      return;
+    }
+    setError(null);
     const params = new URLSearchParams({
       origin,
       destination,
@@ -46,26 +53,8 @@ export function SearchWidget() {
       onSubmit={handleSubmit}
       className="grid grid-cols-1 gap-3 rounded-2xl bg-white p-4 shadow-card sm:grid-cols-2 lg:grid-cols-6 lg:items-end lg:p-5"
     >
-      <Field label="From">
-        <input
-          value={origin}
-          onChange={(e) => setOrigin(e.target.value.toUpperCase().slice(0, 3))}
-          maxLength={3}
-          required
-          className="input"
-          placeholder="MEL"
-        />
-      </Field>
-      <Field label="To">
-        <input
-          value={destination}
-          onChange={(e) => setDestination(e.target.value.toUpperCase().slice(0, 3))}
-          maxLength={3}
-          required
-          className="input"
-          placeholder="MNL"
-        />
-      </Field>
+      <AirportAutocomplete label="From" value={origin} onChange={setOrigin} placeholder="City or airport" />
+      <AirportAutocomplete label="To" value={destination} onChange={setDestination} placeholder="City or airport" />
       <Field label="Departure">
         <input
           type="date"
@@ -112,6 +101,7 @@ export function SearchWidget() {
         />
         Also check nearby airports
       </label>
+      {error && <p className="col-span-full text-xs font-medium text-red-600">{error}</p>}
       <button
         type="submit"
         className="col-span-full rounded-xl bg-accent-500 px-6 py-3 font-semibold text-white transition hover:bg-accent-600 lg:col-span-1"

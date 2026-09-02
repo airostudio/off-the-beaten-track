@@ -7,12 +7,14 @@ import { FlightCard } from '@/components/results/FlightCard';
 import { CreateAlertButton } from '@/components/alerts/CreateAlertButton';
 import { FareHistory } from '@/components/results/FareHistory';
 import { FareCalendar } from '@/components/results/FareCalendar';
+import { AlternativeRoutes } from '@/components/results/AlternativeRoutes';
 import type { CabinClass } from '@/types/user';
 
 interface SearchResponse {
   tier: 'GUEST' | 'FREE' | 'MEMBER';
   offers: ClientFlightOffer[];
   membershipPitch: string | null;
+  cacheFallback?: boolean;
   error?: string;
   message?: string;
 }
@@ -92,6 +94,16 @@ export function SearchResults() {
 
   return (
     <div>
+      {data.cacheFallback && (
+        <div className="mb-6 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-800">
+          <p className="font-semibold">Live fares are temporarily unavailable.</p>
+          <p className="text-sm">
+            We're showing our most recently checked prices for this route — each one is clearly timestamped
+            below. Try again shortly for live pricing.
+          </p>
+        </div>
+      )}
+
       {data.membershipPitch && (
         <div className="mb-6 rounded-2xl bg-navy-950 p-5 text-white">
           <p className="font-semibold">{data.membershipPitch}</p>
@@ -117,6 +129,29 @@ export function SearchResults() {
 
       <div className="mb-6">
         <FareHistory origin={params.get('origin')!} destination={params.get('destination')!} />
+      </div>
+
+      <div className="mb-2 flex flex-wrap">
+        <AlternativeRoutes
+          origin={params.get('origin')!}
+          destination={params.get('destination')!}
+          departureDate={params.get('departureDate')!}
+          cabin={(params.get('cabin') as CabinClass) || 'ECONOMY'}
+          passengers={Number(params.get('passengers') || 1)}
+          mode="alternative"
+          title="Show alternative routes"
+          description="Same cabin, routed via a transit hub — sometimes cheaper than flying direct. Each is two separate bookings; baggage must be re-checked."
+        />
+        <AlternativeRoutes
+          origin={params.get('origin')!}
+          destination={params.get('destination')!}
+          departureDate={params.get('departureDate')!}
+          cabin={(params.get('cabin') as CabinClass) || 'ECONOMY'}
+          passengers={Number(params.get('passengers') || 1)}
+          mode="mixed-cabin"
+          title="Show Smart Mixed Cabin"
+          description="Premium Economy only on the leg that's actually long-haul — Economy on the rest. Based on your travel preferences, or a 6-hour default."
+        />
       </div>
 
       <div className="space-y-4">

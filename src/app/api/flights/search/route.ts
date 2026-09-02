@@ -8,7 +8,8 @@ import { rankOffers } from '@/lib/flights/valueScore';
 import { applyTierAccess } from '@/lib/flights/applyTierAccess';
 import { createSupabaseServiceClient } from '@/lib/supabase/server';
 import { getNearbyAirports } from '@/lib/flights/nearbyAirports';
-import type { NormalisedFlightOffer } from '@/types/flight';
+import { logProviderCalls } from '@/lib/flights/logProviderCall';
+import type { NormalisedFlightOffer, ClientFlightOffer } from '@/types/flight';
 
 const searchSchema = z.object({
   origin: z.string().length(3).toUpperCase(),
@@ -48,9 +49,12 @@ export async function POST(request: NextRequest) {
 
   const req = parsed.data;
   const providers = getActiveProviders();
+  const service = createSupabaseServiceClient();
 
+  const startedAt = Date.now();
   const results = await Promise.allSettled(providers.map((p) => p.searchFlights(req)));
   const rawOffers: NormalisedFlightOffer[] = results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
+  await logProviderCalls(service, req, providers.map((p) => p.id), results, startedAt);
 
   // Nearby/alternative airport search (section 12): also query alternate
   // origin/destination airports and merge them in, clearly labelled so the
@@ -75,18 +79,43 @@ export async function POST(request: NextRequest) {
     rawOffers.push(...alternateResults.flatMap((r) => (r.status === 'fulfilled' ? r.value : [])));
   }
 
+  // Provider fallback (section 44): if every live provider failed, fall back
+  // to the most recent cached offers for this route rather than a hard
+  // error — but ALWAYS marked as cached, never presented as live pricing.
   if (rawOffers.length === 0) {
-    return NextResponse.json(
-      { error: 'No fares available right now. Please try again shortly.' },
-      { status: 502 }
-    );
+    const { data: cached } = await service
+      .from('flight_offers')
+      .select('*')
+      .eq('origin', req.origin)
+      .eq('destination', req.destination)
+      .eq('cabin', req.cabin)
+      .order('last_verified_at', { ascending: false })
+      .limit(10);
+
+    if (!cached || cached.length === 0) {
+      return NextResponse.json(
+        { error: 'No fares available right now. Please try again shortly.' },
+        { status: 502 }
+      );
+    }
+
+    const offers: ClientFlightOffer[] = cached.map((o) => mapCachedOfferToClient(o, viewer));
+    return NextResponse.json({
+      tier: viewer.tier,
+      searchId: null,
+      offers,
+      cacheFallback: true,
+      membershipPitch:
+        viewer.tier !== 'MEMBER'
+          ? 'Members see the freshest fares and genuine member pricing first. Save up to 35% on selected deals.'
+          : null,
+    });
   }
 
   const deduped = dedupeOffers(rawOffers);
   const ranked = rankOffers(deduped);
   const offers = applyTierAccess(ranked, viewer);
 
-  const service = createSupabaseServiceClient();
   const { data: searchRow } = await service
     .from('searches')
     .insert({
@@ -165,4 +194,58 @@ export async function POST(request: NextRequest) {
         ? 'Members see the freshest fares and genuine member pricing first. Save up to 35% on selected deals.'
         : null,
   });
+}
+
+/** Converts a cached `flight_offers` DB row into a client offer, always marked as non-live. */
+function mapCachedOfferToClient(row: Record<string, any>, viewer: Awaited<ReturnType<typeof resolveViewer>>): ClientFlightOffer {
+  const minutes = Math.round((Date.now() - new Date(row.last_verified_at).getTime()) / 60000);
+  const label =
+    minutes < 60
+      ? `Last checked ${minutes} minute${minutes === 1 ? '' : 's'} ago`
+      : minutes < 1440
+        ? `Last checked ${Math.round(minutes / 60)} hour${Math.round(minutes / 60) === 1 ? '' : 's'} ago`
+        : 'Last checked more than a day ago';
+
+  const showMemberPrice = viewer.limits.canSeeMemberPrice && row.member_price != null;
+
+  return {
+    id: `cached-${row.id}`,
+    provider: row.provider_id,
+    airline: row.airline,
+    flightNumber: row.flight_number,
+    origin: row.origin,
+    destination: row.destination,
+    departureAt: row.departure_at,
+    arrivalAt: row.arrival_at,
+    durationMinutes: row.duration_minutes,
+    stops: row.stops,
+    stopoverAirports: [],
+    aircraft: null,
+    cabin: row.cabin,
+    fareClass: row.fare_class,
+    baggage: row.baggage ?? { carryOn: '7kg', checked: null },
+    cancellationPolicy: row.cancellation_policy ?? 'Contact provider',
+    changesPolicy: row.changes_policy ?? 'Contact provider',
+    publicPrice: row.public_price,
+    memberPrice: showMemberPrice ? row.member_price : null,
+    taxes: 0,
+    fees: 0,
+    currency: row.currency,
+    bookingUrl: row.booking_url,
+    offerExpiresAt: row.offer_expires_at,
+    lastVerifiedAt: row.last_verified_at,
+    affiliateCommission: row.affiliate_commission,
+    memberEligible: row.member_price != null,
+    valueScore: 50,
+    scoreBreakdown: { price: 50, duration: 50, stops: 50, flexibility: 50, memberDiscount: 0, historicalPercentile: 50 },
+    badges: [],
+    lockedMemberFare:
+      !showMemberPrice && row.member_price != null
+        ? {
+            saving: row.public_price - row.member_price,
+            savingPercentage: Math.round(((row.public_price - row.member_price) / row.public_price) * 100),
+          }
+        : undefined,
+    priceFreshness: { lastVerifiedAt: row.last_verified_at, isLive: false, label },
+  };
 }

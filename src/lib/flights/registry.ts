@@ -12,7 +12,10 @@ export function getActiveProviders(): FlightProvider[] {
   const providers: FlightProvider[] = [];
 
   if (process.env.FLIGHT_PROVIDER_API_KEY) {
-    // Real provider adapters plug in here, e.g.:
+    // See src/lib/flights/providers/duffel.ts for the scaffold — it is not
+    // wired in yet because it has no real API calls implemented, and doing
+    // so would silently degrade search rather than improve it. Once real
+    // methods are implemented there, uncomment:
     // providers.push(new DuffelFlightProvider(process.env.FLIGHT_PROVIDER_API_KEY));
   }
 
