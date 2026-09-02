@@ -3,9 +3,12 @@
  * the IATA city/airport code). Used to make the dashboard and homepage feel
  * like the trip has already started rather than a generic booking form.
  *
- * Sourced from Pexels (free to use, no attribution required) via direct CDN
- * links — swap PEXELS_ID for a real Unsplash/Pexels API search-by-destination
- * call in Phase 3 for full airport coverage instead of this static map.
+ * The three brand hero shots (outback red dirt, Philippines, mountain
+ * fireplace retreat) are custom images in /public, supplied by the site
+ * owner. Everything else falls back to Pexels (free to use, no attribution
+ * required) via direct CDN links — swap PEXELS_ID for a real Unsplash/Pexels
+ * API search-by-destination call in Phase 3 for full airport coverage
+ * instead of this static map.
  */
 
 function pexels(id: number, w = 1920, h = 1080): string {
@@ -24,7 +27,7 @@ export const DESTINATIONS: Destination[] = [
     code: 'MNL',
     label: 'Philippines',
     region: 'Southeast Asia',
-    images: [pexels(13874296), pexels(31340332), pexels(35646946), pexels(31533420)],
+    images: ['/philippines1.jpg', '/philippines2.jpg', pexels(13874296), pexels(35646946), pexels(31533420)],
   },
   {
     code: 'DPS',
@@ -54,7 +57,7 @@ export const DESTINATIONS: Destination[] = [
     code: 'AYQ',
     label: 'Australian Outback',
     region: 'Australia',
-    images: [pexels(10015971), pexels(11763707), pexels(9331953)],
+    images: ['/red-dirt.jpg', pexels(10015971), pexels(11763707), pexels(9331953)],
   },
 ];
 
@@ -84,21 +87,21 @@ export function pickImage(destination: Destination, seed = Date.now()): string {
  */
 export const INSTAGRAM_FILTER = 'saturate(1.6) contrast(1.15) brightness(1.05) sepia(0.08)';
 
-/** The three hero scenes for the homepage brand slideshow. */
+/** The three hero scenes for the homepage brand slideshow — custom brand photography. */
 export const HERO_SCENES = [
   {
     key: 'outback',
     eyebrow: 'This is where it starts',
     headline: 'Off the beaten track.',
     body: 'Red dirt, wide horizons, and a road most people never take.',
-    image: pexels(10015971),
+    image: '/red-dirt.jpg',
   },
   {
     key: 'philippines',
     eyebrow: 'Then somewhere like this',
     headline: 'Never overpay to get here.',
     body: 'We compare airlines and route combinations most search engines miss.',
-    image: pexels(31340332),
+    image: '/philippines1.jpg',
     filter: INSTAGRAM_FILTER,
     tint: 'linear-gradient(180deg, rgba(0,180,220,0.12), rgba(255,150,60,0.10))',
   },
@@ -107,6 +110,6 @@ export const HERO_SCENES = [
     eyebrow: 'Or somewhere like this',
     headline: 'Better fares. Earlier.',
     body: 'Members see our freshest deals first — before everyone else.',
-    image: pexels(17181934),
+    image: '/mountain.jpg',
   },
 ] as const;
