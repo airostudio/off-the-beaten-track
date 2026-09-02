@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
-export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
+export function AuthForm({ mode, referralCode }: { mode: 'login' | 'signup'; referralCode?: string }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle');
@@ -20,7 +20,10 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
         ? await supabase.auth.signUp({
             email,
             password,
-            options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+            options: {
+              emailRedirectTo: `${window.location.origin}/auth/callback`,
+              data: referralCode ? { referred_by_code: referralCode } : undefined,
+            },
           })
         : await supabase.auth.signInWithPassword({ email, password });
 

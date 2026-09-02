@@ -156,39 +156,53 @@ export async function POST(request: NextRequest) {
     }))
   );
 
+  // dbOfferId lets a "Book" click reference a stable row for affiliate-click
+  // tracking (section 31) — matched back to each offer by its ephemeral
+  // provider-generated id, since insert order isn't preserved once the
+  // response is re-sorted by value score.
+  const dbOfferIdByEphemeralId = new Map<string, string>();
   if (searchRow) {
-    await service.from('flight_offers').insert(
-      deduped.map((o) => ({
-        search_id: searchRow.id,
-        provider_id: o.provider,
-        airline: o.airline,
-        flight_number: o.flightNumber,
-        origin: o.origin,
-        destination: o.destination,
-        departure_at: o.departureAt,
-        arrival_at: o.arrivalAt,
-        duration_minutes: o.durationMinutes,
-        stops: o.stops,
-        cabin: o.cabin,
-        fare_class: o.fareClass,
-        public_price: o.publicPrice,
-        member_price: o.memberPrice,
-        currency: o.currency,
-        baggage: o.baggage,
-        cancellation_policy: o.cancellationPolicy,
-        changes_policy: o.changesPolicy,
-        booking_url: o.bookingUrl,
-        affiliate_commission: o.affiliateCommission,
-        offer_expires_at: o.offerExpiresAt,
-        last_verified_at: o.lastVerifiedAt,
-      }))
-    );
+    const { data: insertedOffers } = await service
+      .from('flight_offers')
+      .insert(
+        deduped.map((o) => ({
+          search_id: searchRow.id,
+          provider_id: o.provider,
+          airline: o.airline,
+          flight_number: o.flightNumber,
+          origin: o.origin,
+          destination: o.destination,
+          departure_at: o.departureAt,
+          arrival_at: o.arrivalAt,
+          duration_minutes: o.durationMinutes,
+          stops: o.stops,
+          cabin: o.cabin,
+          fare_class: o.fareClass,
+          public_price: o.publicPrice,
+          member_price: o.memberPrice,
+          currency: o.currency,
+          baggage: o.baggage,
+          cancellation_policy: o.cancellationPolicy,
+          changes_policy: o.changesPolicy,
+          booking_url: o.bookingUrl,
+          affiliate_commission: o.affiliateCommission,
+          offer_expires_at: o.offerExpiresAt,
+          last_verified_at: o.lastVerifiedAt,
+        }))
+      )
+      .select('id');
+
+    if (insertedOffers) {
+      insertedOffers.forEach((row, i) => dbOfferIdByEphemeralId.set(deduped[i].id, row.id));
+    }
   }
+
+  const offersWithDbId = offers.map((o) => ({ ...o, dbOfferId: dbOfferIdByEphemeralId.get(o.id) }));
 
   return NextResponse.json({
     tier: viewer.tier,
     searchId: searchRow?.id ?? null,
-    offers,
+    offers: offersWithDbId,
     membershipPitch:
       viewer.tier !== 'MEMBER'
         ? 'Members see the freshest fares and genuine member pricing first. Save up to 35% on selected deals.'
@@ -210,6 +224,7 @@ function mapCachedOfferToClient(row: Record<string, any>, viewer: Awaited<Return
 
   return {
     id: `cached-${row.id}`,
+    dbOfferId: row.id,
     provider: row.provider_id,
     airline: row.airline,
     flightNumber: row.flight_number,

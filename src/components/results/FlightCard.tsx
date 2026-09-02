@@ -2,6 +2,7 @@ import type { ClientFlightOffer, FlightBadge } from '@/types/flight';
 import { formatMoney, formatDuration, formatTime } from '@/lib/format';
 import { MemberFareLock } from './MemberFareLock';
 import { WatchTripButton } from '@/components/watchlist/WatchTripButton';
+import { BookingLink } from './BookingLink';
 
 const BADGE_LABEL: Record<FlightBadge, string> = {
   BEST_VALUE: 'Best value',
@@ -79,14 +80,7 @@ export function FlightCard({ offer }: { offer: ClientFlightOffer }) {
           </div>
         )}
 
-        <a
-          href={offer.bookingUrl}
-          target="_blank"
-          rel="noopener noreferrer nofollow sponsored"
-          className="rounded-lg bg-accent-500 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-accent-600"
-        >
-          View flight
-        </a>
+        <BookingLink href={offer.bookingUrl} offerId={offer.dbOfferId} />
 
         <WatchTripButton
           origin={offer.origin}

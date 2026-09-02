@@ -64,6 +64,10 @@ Airports Database — public domain, sourced via the `airport-data` npm package)
 against upstream. This is the airport-picker used by `AirportAutocomplete` on the search widget
 (`/api/airports/search`), not just a handful of hardcoded routes.
 
+`0007_phase4.sql` adds the referral program (`referrals`, `profiles.referral_code` /
+`membership_credit_expires_at`), commission-sharing columns on `commissions`, and `travel_products`
+(hotels/cars/insurance affiliate listings).
+
 ## Honesty constraints baked into the code
 
 - `member_price` in the DB and `memberPrice` in `NormalisedFlightOffer` are nullable and must only be
@@ -93,8 +97,15 @@ against upstream. This is the airport-picker used by `AirportAutocomplete` on th
   `DuffelFlightProvider` scaffold (`src/lib/flights/providers/duffel.ts`, intentionally not wired in
   until real API calls are implemented); richer admin analytics (ARR, average verified saving, popular
   routes, provider error/latency stats from `provider_api_logs`).
-- **Phase 4** — mobile polish, referral program, commission-sharing payouts (`member_rewards` is already
-  modelled), hotels/cars/insurance verticals.
+- **Phase 4** (done) — mobile bottom nav (`MobileBottomNav`, section 39); referral program (`referrals`
+  table, `profiles.referral_code`/`membership_credit_expires_at`, `/signup?ref=CODE`, 30 days credited
+  to both parties, `resolveViewer()` honours the credit as real MEMBER access alongside a paid
+  subscription — never fabricated); Commission Sharing Engine (`src/lib/commissionSharing.ts` — 35% of
+  a confirmed real commission is credited back to the member as `member_rewards`, feeding the dashboard
+  Savings Meter); an affiliate-click → booking → commission pipeline
+  (`/api/affiliate/click`, `dbOfferId` on every live/cached offer, `/admin/bookings` to confirm a real
+  outcome until a live affiliate-network webhook exists); hotels/cars/insurance affiliate verticals
+  (`travel_products` table, `/hotels` `/cars` `/insurance`, `/admin/travel-products` to manage listings).
 - **Phase 5** — direct booking via Duffel Orders/NDC, AI trip planning.
 
 ## Testing

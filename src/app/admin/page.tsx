@@ -12,6 +12,7 @@ export default async function AdminOverviewPage() {
     { count: memberCount },
     { count: freeCount },
     { count: trialCount },
+    { count: complimentaryMemberCount },
     { count: searches30d },
     { count: deals30d },
     { count: bookings30d },
@@ -24,6 +25,10 @@ export default async function AdminOverviewPage() {
     service.from('profiles').select('id', { count: 'exact', head: true }).eq('tier', 'MEMBER'),
     service.from('profiles').select('id', { count: 'exact', head: true }).eq('tier', 'FREE'),
     service.from('subscriptions').select('id', { count: 'exact', head: true }).eq('status', 'trialing'),
+    service
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .gt('membership_credit_expires_at', new Date().toISOString()),
     service.from('searches').select('id', { count: 'exact', head: true }).gte('created_at', since30d),
     service.from('deals').select('id', { count: 'exact', head: true }).gte('discovered_at', since30d),
     service.from('bookings').select('id', { count: 'exact', head: true }).gte('booked_at', since30d),
@@ -61,6 +66,7 @@ export default async function AdminOverviewPage() {
         <Metric label="Paid members" value={memberCount ?? 0} />
         <Metric label="Free accounts" value={freeCount ?? 0} />
         <Metric label="Trials" value={trialCount ?? 0} />
+        <Metric label="Complimentary members (referral)" value={complimentaryMemberCount ?? 0} />
         <Metric label="MRR (est.)" value={formatMoney(mrrCents, 'AUD')} />
         <Metric label="ARR (est.)" value={formatMoney(arrCents, 'AUD')} />
         <Metric label="Searches (30d)" value={searches30d ?? 0} />
