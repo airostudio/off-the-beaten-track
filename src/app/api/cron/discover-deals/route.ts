@@ -87,6 +87,8 @@ export async function POST(request: NextRequest) {
 
     if (isDeal && historicalAverage) {
       const discountPercentage = Math.round(((historicalAverage - cheapest.publicPrice) / historicalAverage) * 100);
+      const { data: destinationAirport } = await service.from('airports').select('country').eq('iata', route.destination).maybeSingle();
+
       const { data: deal } = await service
         .from('deals')
         .insert({
@@ -101,6 +103,7 @@ export async function POST(request: NextRequest) {
           historical_average: historicalAverage,
           discount_percentage: discountPercentage,
           deal_score: computeDealScore(discountPercentage, priorObservations),
+          region: destinationAirport?.country ?? null,
           discovered_at: new Date().toISOString(),
           expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
         })

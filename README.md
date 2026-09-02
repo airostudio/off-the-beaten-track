@@ -123,6 +123,17 @@ against upstream. This is the airport-picker used by `AirportAutocomplete` on th
   reuse the existing engines rather than reinventing them: Best Value/Cheapest/Fastest/Best Member Deal
   from `FlightValueScore`, Smart Route from the Phase 3 Alternative Route Engine, Most Comfortable from
   Smart Mixed Cabin.
+- **Phase 6** (done) — the remaining pieces of the original brief that hadn't been touched: **SEO landing
+  pages** (`/flights/[origin-city]-to-[destination-city]`, resolved dynamically against the full
+  world-airports table via the same fuzzy matcher the trip planner uses, pre-rendered for the seeded
+  popular routes via `generateStaticParams` with `dynamicParams` open for long-tail slugs; `/deals/[region]`
+  for place- or cabin-based deal pages; both show real `fare_observations` history clearly dated as
+  historical, never as a live quote, plus JSON-LD structured data and a generated `sitemap.xml`); an
+  **onboarding wizard** (`/onboarding` — home airport, dream destinations, cabin, flexible dates, trips/year
+  — auto-creates a fare alert per destination, reached via the signup email-confirmation redirect and
+  nudged from the dashboard for anyone without saved preferences); and **admin deal management**
+  (`/admin/deals` — create/feature/expire/delete deals, plus an editor for the per-tier
+  `deal_release_rules` release-delay timing that was previously seed-only).
 
 ## Testing
 
