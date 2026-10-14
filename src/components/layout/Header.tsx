@@ -43,6 +43,9 @@ export function Header() {
           <Link href="/search" className={isTransparent ? 'hover:text-white' : 'hover:text-navy-950'}>
             Search flights
           </Link>
+          <Link href="/plan" className={isTransparent ? 'hover:text-white' : 'hover:text-navy-950'}>
+            Trip planner
+          </Link>
           <Link href="/deals" className={isTransparent ? 'hover:text-white' : 'hover:text-navy-950'}>
             Deals
           </Link>

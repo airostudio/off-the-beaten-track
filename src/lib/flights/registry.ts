@@ -25,3 +25,8 @@ export function getActiveProviders(): FlightProvider[] {
 
   return providers;
 }
+
+/** Looks up a single provider by id, e.g. to call createOrder() on the provider a booking's offer came from. */
+export function getProviderById(id: string): FlightProvider | null {
+  return getActiveProviders().find((p) => p.id === id) ?? null;
+}

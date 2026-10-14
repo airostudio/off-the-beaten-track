@@ -8,7 +8,7 @@ export default async function DashboardOverviewPage() {
   const viewer = await resolveViewer();
   const service = createSupabaseServiceClient();
 
-  const [{ count: alertCount }, { count: savedSearchCount }, { data: rewards }, { data: subscription }, { data: lastSearch }] =
+  const [{ count: alertCount }, { count: savedSearchCount }, { data: rewards }, { data: subscription }, { data: lastSearch }, { data: preferences }] =
     await Promise.all([
       service.from('alerts').select('id', { count: 'exact', head: true }).eq('user_id', viewer.userId).eq('active', true),
       service.from('saved_searches').select('id', { count: 'exact', head: true }).eq('user_id', viewer.userId),
@@ -28,6 +28,7 @@ export default async function DashboardOverviewPage() {
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle(),
+      service.from('travel_preferences').select('user_id').eq('user_id', viewer.userId ?? '').maybeSingle(),
     ]);
 
   const verifiedSavingsCents = (rewards ?? []).reduce((sum, r: any) => sum + Number(r.member_reward ?? 0), 0);
@@ -36,6 +37,18 @@ export default async function DashboardOverviewPage() {
 
   return (
     <div className="space-y-6">
+      {!preferences && (
+        <div className="rounded-2xl border border-accent-500/30 bg-accent-500/5 p-4">
+          <p className="font-semibold text-navy-950">Set up your travel profile</p>
+          <p className="text-sm text-slate-600">
+            Takes 30 seconds — we'll auto-create fare alerts for the destinations you tell us about.
+          </p>
+          <Link href="/onboarding" className="mt-2 inline-block text-sm font-semibold text-accent-600">
+            Get started →
+          </Link>
+        </div>
+      )}
+
       <DestinationHero initialCode={lastSearch?.destination ?? null} />
 
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">

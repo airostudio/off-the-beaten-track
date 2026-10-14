@@ -32,6 +32,18 @@ export default async function DealsPage() {
         </Link>
       )}
 
+      <div className="mt-6 flex flex-wrap gap-2">
+        {['philippines', 'thailand', 'bali', 'vietnam', 'japan', 'premium-economy', 'business'].map((slug) => (
+          <Link
+            key={slug}
+            href={`/deals/${slug}`}
+            className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-navy-700 transition hover:border-navy-950"
+          >
+            {slug.replace('-', ' ')}
+          </Link>
+        ))}
+      </div>
+
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {(deals ?? []).map((d) => (
           <div key={d.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">

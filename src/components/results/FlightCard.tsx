@@ -3,6 +3,7 @@ import { formatMoney, formatDuration, formatTime } from '@/lib/format';
 import { MemberFareLock } from './MemberFareLock';
 import { WatchTripButton } from '@/components/watchlist/WatchTripButton';
 import { BookingLink } from './BookingLink';
+import { DirectBookButton } from './DirectBookButton';
 
 const BADGE_LABEL: Record<FlightBadge, string> = {
   BEST_VALUE: 'Best value',
@@ -81,6 +82,7 @@ export function FlightCard({ offer }: { offer: ClientFlightOffer }) {
         )}
 
         <BookingLink href={offer.bookingUrl} offerId={offer.dbOfferId} />
+        {offer.dbOfferId && <DirectBookButton dbOfferId={offer.dbOfferId} />}
 
         <WatchTripButton
           origin={offer.origin}
